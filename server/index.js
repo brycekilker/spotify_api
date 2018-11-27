@@ -2,7 +2,9 @@ require('dotenv').config()
 const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express')
 const cookieParser = require('cookie-parser');
+const bodyParser = require('body-parser')
 const cors = require('cors');
+const multer = require('multer')({ dest: "server/uploads" })
 const vision = require('@google-cloud/vision')
 const { Storage } = require('@google-cloud/storage');
 const querystring = require('querystring');
@@ -11,6 +13,9 @@ const request = require('request'); // "Request" library
 const STATE_KEY = require('./helpers/constants').STATE_KEY
 console.log(STATE_KEY)
 const app = express()
+app.use(bodyParser.urlencoded({ extended: true }))
+app.use(bodyParser.json())
+// app.use(multer().array())
 const router = express.Router()
 
 // Your Google Cloud Platform project ID
@@ -48,7 +53,6 @@ function downloadFile(file) {
             reject()
         }
     })
-
 }
 async function getBucketFiles(name) {
     const [files] = await storage.bucket(name).getFiles()
@@ -66,24 +70,38 @@ async function getBucketFiles(name) {
 }
 
 // Performs label detection on the image file
-function labelImages(name) {
-    console.log("this is the label images", name)
-    client
-        .labelDetection(`./server/img/${name}`)
-        .then(results => {
-            console.log("this is results", results)
-            const labels = results[0].labelAnnotations;
-
-            console.log('Labels:');
-            labels.forEach(label => console.log(label.description));
-        })
-        .catch(err => {
-            console.error('ERROR:', err);
-        });
-
+function labelImages(name, path = "img") {
+    return new Promise((resolve, reject) => {
+        console.log("this is the label images", name)
+        client
+            .labelDetection(`./server/${path}/${name}`)
+            .then(results => {
+                const labels = results[0].labelAnnotations;
+                resolve(labels[0].description)
+            })
+            .catch(err => {
+                console.error('ERROR:', err);
+                reject(err)
+            });
+    })
 }
 
-
+router.post("/labelimage", multer.any(), async (req, res) => {
+    console.log("this is reqbody", req.files)
+    const description = await labelImages(req.files[0]['filename'], "uploads")
+    console.log("this is Description", description)
+    getSpotifyTracks(description)
+        .then(
+            function (data) {
+                console.log('track information');
+                res.send(data.body)
+            },
+            function (err) {
+                console.error(err);
+            }
+        );
+    //return new promise from label images function and resolve it with the label[0] and pass it to spotify call.
+})
 
 
 
@@ -168,7 +186,7 @@ router.route("/getartist/:artist")
 router.route("/gettracks/:tracks")
     .get((req, res) => {
         console.log("get track", req.params.tracks)
-        spotifyApi.searchTracks(req.params.tracks, { limit: 10, offset: 20 })
+        getSpotifyTracks(req.params.tracks)
             .then(
                 function (data) {
                     console.log('track information');
@@ -181,7 +199,10 @@ router.route("/gettracks/:tracks")
     });
 
 
+function getSpotifyTracks(tracks) {
+    return spotifyApi.searchTracks(tracks, { limit: 10, offset: 20 })
 
+}
 
 
 

@@ -17,7 +17,22 @@ class App extends Component {
     query: '',
     tracks: '',
     player: '',
-    image: ''
+    image: '',
+    userImage: ''
+  }
+  componentDidMount() {
+    console.log("this is refs", this.refs)
+  }
+  handleUserImage = (e) => {
+    e.preventDefault()
+    const data = new FormData()
+    data.append('file', this.refs.uploadInput.files[0])
+    fetch('/labelimage', { method: 'post', body: data }).then(res => res.json()).then((response) => {
+      console.log("this is the response", response)
+      this.setState({
+        tracks: response.tracks.items[0].name
+      })
+    })
   }
   handleChange = (e) => {
     this.setState({
@@ -93,6 +108,10 @@ class App extends Component {
           ? <iframe src={`https://open.spotify.com/embed/artist/${this.state.player}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
           : <p style={{ color: "white" }}></p>
         }
+        <form onSubmit={this.handleUserImage}>
+          <input type="file" ref="uploadInput"></input>
+          <button>Upload</button>
+        </form>
         {/* {this.state.tracks
           ? <a href={this.state.tracks.spotify}>Link to an more songs!</a>
           : <p style={{ color: "white" }}> Search for an artist</p>

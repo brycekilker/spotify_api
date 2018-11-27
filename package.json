@@ -3,9 +3,18 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@google-cloud/vision": "^0.23.0",
+    "cookie-parser": "^1.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.16.4",
+    "node-spotify-api": "^1.0.7",
+    "querystring": "^0.2.0",
     "react": "^16.6.3",
     "react-dom": "^16.6.3",
-    "react-scripts": "2.1.1"
+    "react-scripts": "2.1.1",
+    "spotify": "^0.3.0",
+    "spotify-web-api-js": "^1.1.1",
+    "spotify-web-api-node": "^4.0.0"
   },
   "scripts": {
     "start": "react-scripts start",
@@ -21,5 +30,9 @@
     "not dead",
     "not ie <= 11",
     "not op_mini all"
-  ]
+  ],
+  "proxy": "http://localhost:8888",
+  "devDependencies": {
+    "nodemon": "^1.18.6"
+  }
 }

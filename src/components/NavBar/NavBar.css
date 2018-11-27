@@ -1,0 +1,14 @@
+.nav {
+    background-color: aquamarine;
+    border: 2px thick;
+}
+
+ul {
+    float:left;
+    margin-left: 2px;
+    padding: 5px;
+    color: #fff;
+    font-family: trebuchet ms;
+    font-size: 19px;
+    text-align: justify;
+}

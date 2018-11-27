@@ -1,28 +1,104 @@
 import React, { Component } from 'react';
-import logo from './logo.svg';
 import './App.css';
+import NavBar from './components/NavBar/NavBar'
+import SearchBar from './components/SearchBar/SearchBar'
+// import GetAuth from './components/GetAuth/GetAuth'
+
+
+//make function to get spotify access token client.createaccesstoken
+//ideally build component that handles the spotify communicaiton
 
 class App extends Component {
+  state = {
+    albumId: "43ZHCT0cAZBISjO8DG9PnE",
+    albums: [],
+    artists: [],
+    loading: true,
+    query: '',
+    tracks: '',
+    player: '',
+    image: ''
+  }
+  handleChange = (e) => {
+    this.setState({
+      query: e.target.value
+    })
+  }
+  handleSubmit = (e) => {
+    e.preventDefault();
+    this.getArtist()
+    this.getTrack()
+  }
+  getArtist = () => {
+    fetch(`/getartist/${this.state.query}`).then(
+      res => res.json()
+    ).then(body => this.setState({
+      artists: body.artists.items
+    }))
+  }
+  getTrack = () => {
+    fetch(`/gettracks/${this.state.query}`).then(
+      res => res.json()
+    ).then(body => this.setState({
+      tracks: body.tracks.items[Math.floor(Math.random() * 10)].external_urls
+    }))
+  }
+  getImage = () => {
+    fetch(`/getartist/${this.state.query}`).then(
+      res => res.json()
+    ).then(body => this.setState({
+      image: body.artists.items[0].images[0].url
+    }))
+  }
+  getAlbum = () => {
+    fetch(`/getalbum/${this.state.albumId}`).then(
+      res => res.json()
+    ).then(body => this.setState({
+      albums: body.items
+    }))
+  }
+  getPlayer = () => {
+    this.setState({
+      player: this.state.artists[0].uri.split(":").pop()
+    })
+  }
+  authorize = (e) => {
+    e.preventDefault();
+    console.log('its working')
+    fetch('/login')
+  }
   render() {
+    console.log(this.state)
+    console.log("this is image", this.state.image)
     return (
-      <div className="App">
-        <header className="App-header">
-          <img src={logo} className="App-logo" alt="logo" />
-          <p>
-            Edit <code>src/App.js</code> and save to reload.
-          </p>
-          <a
-            className="App-link"
-            href="https://reactjs.org"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn React
-          </a>
-        </header>
-      </div>
+      <div className="App" >
+        <NavBar />
+        {/* <button onClick={this.getAlbum}> Get Album </button> */}
+        {this.state.albums.map(album =>
+          <h3 className="content" key={Math.floor(Math.random() * 100)}><div>{album.name}</div></h3>
+        )}
+        <SearchBar handleSubmit={this.handleSubmit} handleChange={this.handleChange} query={this.state.query} />
+
+        <button onClick={this.getPlayer}>what a button</button>
+        {
+          this.state.artists.map(artist =>
+            <h3 key={Math.random() * 100}>{artist.name}</h3>
+            //Nail down what information exactly I want to retrieve and display
+          )
+        }
+        <button onClick={this.getImage}>image</button>
+
+        <img src={this.state.image} alt="picture"></img>
+        {this.state.player
+          ? <iframe src={`https://open.spotify.com/embed/artist/${this.state.player}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+          : <p style={{ color: "white" }}></p>
+        }
+        {/* {this.state.tracks
+          ? <a href={this.state.tracks.spotify}>Link to an more songs!</a>
+          : <p style={{ color: "white" }}> Search for an artist</p>
+        } */}
+      </div >
     );
   }
 }
-
 export default App;

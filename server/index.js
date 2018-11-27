@@ -1,7 +1,10 @@
+require('dotenv').config()
 const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express')
 const cookieParser = require('cookie-parser');
 const cors = require('cors');
+const vision = require('@google-cloud/vision')
+const { Storage } = require('@google-cloud/storage');
 const querystring = require('querystring');
 const randomString = require('./helpers/randomString')
 const request = require('request'); // "Request" library
@@ -9,6 +12,85 @@ const STATE_KEY = require('./helpers/constants').STATE_KEY
 console.log(STATE_KEY)
 const app = express()
 const router = express.Router()
+
+// Your Google Cloud Platform project ID
+const client = new vision.ImageAnnotatorClient();
+// Creates a client
+const storage = new Storage()
+
+// Makes an authenticated API request.
+storage
+    .getBuckets()
+    .then((results) => {
+        const buckets = results[0];
+
+        console.log('Buckets:');
+        buckets.forEach((bucket) => {
+            getBucketFiles(bucket.name)
+        });
+    })
+    .catch((err) => {
+        console.error('ERROR:', err);
+    });
+
+function downloadFile(file) {
+    return new Promise(async (resolve, reject) => {
+        try {
+            console.log("download file")
+            const options = {
+                destination: `./server/img/${file.name}`
+            }
+            await file.download(options)
+            resolve()
+            console.log("this is linke 42")
+        } catch (err) {
+            console.log("error", err)
+            reject()
+        }
+    })
+
+}
+async function getBucketFiles(name) {
+    const [files] = await storage.bucket(name).getFiles()
+    await new Promise((resolve, reject) => {
+        files.forEach(async (file, index) => {
+            await downloadFile(file)
+            if (index === files.length - 1) {
+                resolve()
+            }
+        })
+    })
+    files.forEach(file => {
+        labelImages(file.name)
+    })
+}
+
+// Performs label detection on the image file
+function labelImages(name) {
+    console.log("this is the label images", name)
+    client
+        .labelDetection(`./server/img/${name}`)
+        .then(results => {
+            console.log("this is results", results)
+            const labels = results[0].labelAnnotations;
+
+            console.log('Labels:');
+            labels.forEach(label => console.log(label.description));
+        })
+        .catch(err => {
+            console.error('ERROR:', err);
+        });
+
+}
+
+
+
+
+
+
+
+
+
 
 
 //instatiate New Spotify

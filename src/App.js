@@ -16,6 +16,7 @@ class App extends Component {
     loading: true,
     query: '',
     tracks: '',
+    trackName: '',
     player: '',
     image: '',
     userImage: ''
@@ -30,7 +31,8 @@ class App extends Component {
     fetch('/labelimage', { method: 'post', body: data }).then(res => res.json()).then((response) => {
       console.log("this is the response", response)
       this.setState({
-        tracks: response.tracks.items[0].name
+        tracks: response.tracks.items[0].uri.split(":").pop(),
+        trackName: response.tracks.items[0].name
       })
     })
   }
@@ -112,6 +114,12 @@ class App extends Component {
           <input type="file" ref="uploadInput"></input>
           <button>Upload</button>
         </form>
+        <h3 style={{ color: "white" }}>{this.state.trackName}</h3>
+        {this.state.tracks
+          ? <iframe src={`https://open.spotify.com/embed/track/${this.state.tracks}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+          : <p style={{ color: "white" }}></p>
+        }
+
         {/* {this.state.tracks
           ? <a href={this.state.tracks.spotify}>Link to an more songs!</a>
           : <p style={{ color: "white" }}> Search for an artist</p>

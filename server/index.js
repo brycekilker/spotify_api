@@ -21,53 +21,49 @@ const router = express.Router()
 // Your Google Cloud Platform project ID
 const client = new vision.ImageAnnotatorClient();
 // Creates a client
-const storage = new Storage()
+// const storage = new Storage()
 
-// Makes an authenticated API request.
-storage
-    .getBuckets()
-    .then((results) => {
-        const buckets = results[0];
+// // Makes an authenticated API request. This is if we want to use buckets
+// storage
+//     .getBuckets()
+//     .then((results) => {
+//         const buckets = results[0];
+//         buckets.forEach((bucket) => {
+//             getBucketFiles(bucket.name)
+//         });
+//     })
+//     .catch((err) => {
+//         console.error('ERROR:', err);
+//     });
 
-        console.log('Buckets:');
-        buckets.forEach((bucket) => {
-            getBucketFiles(bucket.name)
-        });
-    })
-    .catch((err) => {
-        console.error('ERROR:', err);
-    });
-
-function downloadFile(file) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            console.log("download file")
-            const options = {
-                destination: `./server/img/${file.name}`
-            }
-            await file.download(options)
-            resolve()
-            console.log("this is linke 42")
-        } catch (err) {
-            console.log("error", err)
-            reject()
-        }
-    })
-}
-async function getBucketFiles(name) {
-    const [files] = await storage.bucket(name).getFiles()
-    await new Promise((resolve, reject) => {
-        files.forEach(async (file, index) => {
-            await downloadFile(file)
-            if (index === files.length - 1) {
-                resolve()
-            }
-        })
-    })
-    files.forEach(file => {
-        labelImages(file.name)
-    })
-}
+// function downloadFile(file) {
+//     return new Promise(async (resolve, reject) => {
+//         try {
+//             const options = {
+//                 destination: `./server/img/${file.name}`
+//             }
+//             await file.download(options)
+//             resolve()
+//         } catch (err) {
+//             console.log("error", err)
+//             reject()
+//         }
+//     })
+// }
+// async function getBucketFiles(name) {
+//     const [files] = await storage.bucket(name).getFiles()
+//     await new Promise((resolve, reject) => {
+//         files.forEach(async (file, index) => {
+//             await downloadFile(file)
+//             if (index === files.length - 1) {
+//                 resolve()
+//             }
+//         })
+//     })
+//     files.forEach(file => {
+//         labelImages(file.name)
+//     })
+// }
 
 // Performs label detection on the image file
 function labelImages(name, path = "img") {
@@ -102,14 +98,6 @@ router.post("/labelimage", multer.any(), async (req, res) => {
         );
     //return new promise from label images function and resolve it with the label[0] and pass it to spotify call.
 })
-
-
-
-
-
-
-
-
 
 //instatiate New Spotify
 // credentials are optional

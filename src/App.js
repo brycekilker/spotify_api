@@ -19,22 +19,30 @@ class App extends Component {
     trackName: '',
     player: '',
     image: '',
-    userImage: ''
   }
-  componentDidMount() {
-    console.log("this is refs", this.refs)
-  }
+
+  uploadInput = React.createRef()
+  userImage = React.createRef()
+
   handleUserImage = (e) => {
     e.preventDefault()
     const data = new FormData()
-    data.append('file', this.refs.uploadInput.files[0])
+    data.append('file', this.uploadInput.current.files[0])
     fetch('/labelimage', { method: 'post', body: data }).then(res => res.json()).then((response) => {
-      console.log("this is the response", response)
       this.setState({
         tracks: response.tracks.items[0].uri.split(":").pop(),
         trackName: response.tracks.items[0].name
       })
     })
+  }
+  handleShowImage = (e) => {
+    const reader = new FileReader()
+    reader.onload = (aImg => {
+      return (e) => {
+        aImg.src = e.target.result
+      }
+    })(this.userImage.current)
+    reader.readAsDataURL(e.currentTarget.files[0])
   }
   handleChange = (e) => {
     this.setState({
@@ -86,7 +94,6 @@ class App extends Component {
   }
   render() {
     console.log(this.state)
-    console.log("this is image", this.state.image)
     return (
       <div className="App" >
         <NavBar />
@@ -111,7 +118,7 @@ class App extends Component {
           : <p style={{ color: "white" }}></p>
         }
         <form onSubmit={this.handleUserImage}>
-          <input type="file" ref="uploadInput"></input>
+          <input onChange={this.handleShowImage} type="file" ref={this.uploadInput}></input>
           <button>Upload</button>
         </form>
         <h3 style={{ color: "white" }}>{this.state.trackName}</h3>
@@ -119,7 +126,7 @@ class App extends Component {
           ? <iframe src={`https://open.spotify.com/embed/track/${this.state.tracks}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
           : <p style={{ color: "white" }}></p>
         }
-
+        <img width="100" height="100" ref={this.userImage}></img>
         {/* {this.state.tracks
           ? <a href={this.state.tracks.spotify}>Link to an more songs!</a>
           : <p style={{ color: "white" }}> Search for an artist</p>

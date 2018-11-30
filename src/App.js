@@ -96,41 +96,39 @@ class App extends Component {
     console.log(this.state)
     return (
       <div className="App" >
-        <NavBar />
-        {/* <button onClick={this.getAlbum}> Get Album </button> */}
-        {this.state.albums.map(album =>
-          <h3 className="content" key={Math.floor(Math.random() * 100)}><div>{album.name}</div></h3>
-        )}
-        <SearchBar handleSubmit={this.handleSubmit} handleChange={this.handleChange} query={this.state.query} />
-
-        <button onClick={this.getPlayer}>what a button</button>
-        {
-          this.state.artists.map(artist =>
-            <h3 key={Math.random() * 100}>{artist.name}</h3>
-            //Nail down what information exactly I want to retrieve and display
-          )
-        }
-        <button onClick={this.getImage}>image</button>
-
-        <img src={this.state.image} alt="picture"></img>
-        {this.state.player
+        <header>Spotivision</header>
+        <div id='one'>1.<SearchBar handleSubmit={this.handleSubmit} handleChange={this.handleChange} query={this.state.query} /></div>
+        <div id='two'>2.<button onClick={this.getPlayer}>what a button</button></div>
+        <div id='three'>3. <button onClick={this.getImage}>image</button>
+        </div>
+        <div id='four'>4.
+          {
+            this.state.artists.map(artist =>
+              <h3 key={Math.random() * 100}>{artist.name}</h3>
+            )
+          }</div>
+        <div id='five'>5.{this.state.player
           ? <iframe src={`https://open.spotify.com/embed/artist/${this.state.player}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
           : <p style={{ color: "white" }}></p>
-        }
-        <form onSubmit={this.handleUserImage}>
-          <input onChange={this.handleShowImage} type="file" ref={this.uploadInput}></input>
-          <button>Upload</button>
-        </form>
-        <h3 style={{ color: "white" }}>{this.state.trackName}</h3>
-        {this.state.tracks
-          ? <iframe src={`https://open.spotify.com/embed/track/${this.state.tracks}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
-          : <p style={{ color: "white" }}></p>
-        }
-        <img width="100" height="100" ref={this.userImage}></img>
-        {/* {this.state.tracks
-          ? <a href={this.state.tracks.spotify}>Link to an more songs!</a>
-          : <p style={{ color: "white" }}> Search for an artist</p>
-        } */}
+        } </div>
+        <div id='six'>6.
+          {this.state.image
+            ? <img src={this.state.image} alt="picture"></img>
+            : <p></p>}</div>
+        <div id='seven'>7.
+          <form onSubmit={this.handleUserImage}>
+            <input onChange={this.handleShowImage} type="file" ref={this.uploadInput}></input>
+            <button>Upload</button>
+          </form></div>
+        <div id='eight'>8. <h3 style={{ color: "white" }}>{this.state.trackName}</h3></div>
+        <div id='nine'>9.
+          {this.state.tracks
+            ? <iframe src={`https://open.spotify.com/embed/track/${this.state.tracks}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+            : <p style={{ color: "white" }}></p>
+          }
+        </div>
+        <div id='ten'>10.<img width="100" height="100" ref={this.userImage}></img> </div>
+        <footer></footer>
       </div >
     );
   }

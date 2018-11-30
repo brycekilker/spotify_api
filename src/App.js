@@ -115,7 +115,7 @@ class App extends Component {
 
           <h3 >{this.state.trackName}</h3>
           {this.state.tracks
-            ? <iframe src={`https://open.spotify.com/embed/track/${this.state.tracks}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+            ? <iframe src={`https://open.spotify.com/embed/track/${this.state.tracks}`} height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
             : <p style={{ color: "white" }}></p>
           }
         </div>

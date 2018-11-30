@@ -74,14 +74,28 @@ let spotifyApi = new SpotifyWebApi({
 
 app.use(cors())
     .use(cookieParser());
+
+let tokenExpirationEpoch
+
 spotifyApi.clientCredentialsGrant().then(
     (data) => {
+        console.log(data)
         spotifyApi.setAccessToken(data.body['access_token'])
+        spotifyApi.setRefreshToken(data.body['refresh_token']);
+
+        // Save the amount of seconds until the access token expired
+        tokenExpirationEpoch = new Date().getTime() / 1000 + data.body['expires_in'];
+        console.log(
+            'Retrieved token. It expires in ' +
+            Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+            ' seconds!')
     },
     (error) => {
         console.log(error)
     }
-)
+);
+
+
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');

@@ -97,37 +97,36 @@ class App extends Component {
     return (
       <div className="App" >
         <header>Spotivision</header>
-        <div id='one'>1.<SearchBar handleSubmit={this.handleSubmit} handleChange={this.handleChange} query={this.state.query} /></div>
-        <div id='two'>2.<button onClick={this.getPlayer}>what a button</button></div>
-        <div id='three'>3. <button onClick={this.getImage}>image</button>
+        <div id="search">
+          <SearchBar handleSubmit={this.handleSubmit} handleChange={this.handleChange} query={this.state.query} />
+          <button onClick={this.getImage}>image</button>
+          <form onSubmit={this.handleUserImage}>
+            <input onChange={this.handleShowImage} type="file" ref={this.uploadInput}></input>
+            <button>Upload</button>
+          </form>
         </div>
-        <div id='four'>4.
+        <div id="image">
+          {this.state.image
+            ? <img src={this.state.image} alt="picture"></img>
+            : <p></p>}
+          <img ref={this.userImage}></img>
+        </div>
+        <div id="player">
           {
             this.state.artists.map(artist =>
               <h3 key={Math.random() * 100}>{artist.name}</h3>
             )
-          }</div>
-        <div id='five'>5.{this.state.player
-          ? <iframe src={`https://open.spotify.com/embed/artist/${this.state.player}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
-          : <p style={{ color: "white" }}></p>
-        } </div>
-        <div id='six'>6.
-          {this.state.image
-            ? <img src={this.state.image} alt="picture"></img>
-            : <p></p>}</div>
-        <div id='seven'>7.
-          <form onSubmit={this.handleUserImage}>
-            <input onChange={this.handleShowImage} type="file" ref={this.uploadInput}></input>
-            <button>Upload</button>
-          </form></div>
-        <div id='eight'>8. <h3 style={{ color: "white" }}>{this.state.trackName}</h3></div>
-        <div id='nine'>9.
+          }
+
+          <h3 >{this.state.trackName}</h3>
           {this.state.tracks
             ? <iframe src={`https://open.spotify.com/embed/track/${this.state.tracks}`} width="200" height="280" frameBorder="0" allowtransparency="true" allow="encrypted-media"></iframe>
             : <p style={{ color: "white" }}></p>
           }
         </div>
-        <div id='ten'>10.<img width="100" height="100" ref={this.userImage}></img> </div>
+
+
+
         <footer></footer>
       </div >
     );

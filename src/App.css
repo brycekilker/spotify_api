@@ -1,5 +1,5 @@
 body {
-  /* background-image: url(/img/back.jpg); */
+  background-image: url(/img/back.jpg);
   align-content: center;
   max-width: 100%;
   size: 100%;
@@ -15,18 +15,20 @@ body {
   max-height: 700px;
   margin: 0 auto;
   text-align: center;
+  color: antiquewhite;
 }
 #search{
   grid-column: 1/2;
   grid-row: 2/3;
+  text-align: center;
 }
-#image{
+#images{
   display: flex;
   flex-direction: column;
   grid-column: 1/2;
   grid-row:3/4;
 }
-#image > img{
+#images > img{
   object-fit: cover;
   width: 100%;
   max-height: 100%;
@@ -39,8 +41,9 @@ body {
   color: #61dafb;
 }
 header {
-  grid-column: 1/5;
+  grid-column: 1/span 5;
   font-size: 50px;
+  text-align: center;
 }
 footer {
   grid-column: 1/5;

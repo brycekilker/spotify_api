@@ -2,15 +2,9 @@ import React, { Component } from 'react';
 import './App.css';
 import NavBar from './components/NavBar/NavBar'
 import SearchBar from './components/SearchBar/SearchBar'
-// import GetAuth from './components/GetAuth/GetAuth'
-
-
-//make function to get spotify access token client.createaccesstoken
-//ideally build component that handles the spotify communicaiton
 
 class App extends Component {
   state = {
-    albumId: "43ZHCT0cAZBISjO8DG9PnE",
     albums: [],
     artists: [],
     loading: true,
@@ -19,6 +13,7 @@ class App extends Component {
     trackName: '',
     player: '',
     image: '',
+    newImage: '',
   }
 
   uploadInput = React.createRef()
@@ -31,7 +26,8 @@ class App extends Component {
     fetch('/labelimage', { method: 'post', body: data }).then(res => res.json()).then((response) => {
       this.setState({
         tracks: response.tracks.items[0].uri.split(":").pop(),
-        trackName: response.tracks.items[0].name
+        trackName: response.tracks.items[0].name,
+        newImage: response.tracks.items[0].album.images[0].url
       })
     })
   }
@@ -98,18 +94,17 @@ class App extends Component {
       <div className="App" >
         <header>Spotivision</header>
         <div id="search">
-          <SearchBar handleSubmit={this.handleSubmit} handleChange={this.handleChange} query={this.state.query} />
-          <button onClick={this.getImage}>image</button>
+          <h2>Upload your image!</h2>
           <form onSubmit={this.handleUserImage}>
             <input onChange={this.handleShowImage} type="file" ref={this.uploadInput}></input>
             <button>Upload</button>
           </form>
         </div>
-        <div id="image">
-          {this.state.image
-            ? <img src={this.state.image} alt="picture"></img>
-            : <p></p>}
+        <div id="images">
           <img ref={this.userImage}></img>
+          {this.state.newImage
+            ? <img src={this.state.newImage} alt="picture"></img>
+            : <p></p>}
         </div>
         <div id="player">
           {
@@ -124,9 +119,6 @@ class App extends Component {
             : <p style={{ color: "white" }}></p>
           }
         </div>
-
-
-
         <footer></footer>
       </div >
     );

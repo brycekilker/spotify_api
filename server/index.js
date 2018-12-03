@@ -39,7 +39,8 @@ function labelImages(name, path = "img") {
         client
             .labelDetection(`./server/${path}/${name}`)
             .then(results => {
-                // console.log("this is labels", results[0].labelAnnotations)
+                console.log("these are broad labels", results[0].labelAnnotations)
+                console.log("this is labels", results[0].labelAnnotations[1].description)
                 const labels = results[0].labelAnnotations;
                 resolve(labels[0].description)
             })
@@ -51,17 +52,19 @@ function labelImages(name, path = "img") {
 }
 
 router.post("/labelimage", upload.any(), async (req, res) => {
-    console.log("this is reqbody", req.files)
     const description = await labelImages(req.files[0]['filename'], "uploads")
-    getSpotifyTracks(description)
+    const stuff = await getSpotifyTracks(description)
         .then(
             function (data) {
-                res.send(data.body)
+                return data.body
             },
             function (err) {
                 console.error(err);
             }
         );
+    stuff.description = description
+    console.log("this is stuff", stuff)
+    res.send(stuff)
     //return new promise from label images function and resolve it with the label[0] and pass it to spotify call.
 })
 
@@ -151,6 +154,7 @@ router.route("/gettracks/:tracks")
 
 
 function getSpotifyTracks(tracks) {
+    console.log("TRACKS!!!!", tracks)
     return spotifyApi.searchTracks(tracks, { limit: 10, offset: 20 })
 
 }

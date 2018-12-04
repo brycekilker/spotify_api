@@ -72,73 +72,87 @@ router.post("/labelimage", upload.any(), async (req, res) => {
     res.send(stuff)
     //return new promise from label images function and resolve it with the label[0] and pass it to spotify call.
 })
-var authorizationCode =
-    'AQAgjS78s64u1axMCBCRA0cViW_ZDDU0pbgENJ_-WpZr3cEO7V5O-JELcEPU6pGLPp08SfO3dnHmu6XJikKqrU8LX9W6J11NyoaetrXtZFW-Y58UGeV69tuyybcNUS2u6eyup1EgzbTEx4LqrP_eCHsc9xHJ0JUzEhi7xcqzQG70roE4WKM_YrlDZO-e7GDRMqunS9RMoSwF_ov-gOMpvy9OMb7O58nZoc3LSEdEwoZPCLU4N4TTJ-IF6YsQRhQkEOJK';
 //instatiate New Spotify
 // credentials are optional
-let spotifyApi = new SpotifyWebApi({
+// let spotifyApi = new SpotifyWebApi({
+//     clientId: '8c5b0b3a7a2946c99a1f263a9fe7afbe',
+//     clientSecret: '4355750f8eff498bbb189804984be87f',
+//     redirectUri: 'http://localhost:8888'
+// })
+var scopes = ['user-read-private', 'user-read-email'],
+    redirectUri = 'http://localhost:8888/callback',
+    clientId = '8c5b0b3a7a2946c99a1f263a9fe7afbe',
+    state = 'some-state-of-my-choice';
+
+// Setting credentials can be done in the wrapper's constructor, or using the API object's setters.
+var spotifyApi = new SpotifyWebApi({
+    redirectUri: redirectUri,
+    clientId: clientId
+});
+
+// Create the authorization URL
+var authorizeURL = spotifyApi.createAuthorizeURL(scopes, state);
+
+// https://accounts.spotify.com:443/authorize?client_id=5fe01282e44241328a84e7c5cc169165&response_type=code&redirect_uri=https://example.com/callback&scope=user-read-private%20user-read-email&state=some-state-of-my-choice
+console.log(authorizeURL);
+
+var credentials = {
     clientId: '8c5b0b3a7a2946c99a1f263a9fe7afbe',
     clientSecret: '4355750f8eff498bbb189804984be87f',
-    redirectUri: 'http://localhost:8888'
-})
+    redirectUri: 'http://localhost:8888/callback'
+};
 
-app.use(cors())
-    .use(cookieParser());
+var spotifyApi = new SpotifyWebApi(credentials);
 
-let tokenExpirationEpoch
+// The code that's returned as a query parameter to the redirect URI
+var code = 'MQCbtKe23z7YzzS44KzZzZgjQa621hgSzHN';
 
-spotifyApi.clientCredentialsGrant().then(
-    (data) => {
-        console.log(data)
-        spotifyApi.setAccessToken(data.body['access_token'])
+// Retrieve an access token and a refresh token
+spotifyApi.authorizationCodeGrant(code).then(
+    function (data) {
+        console.log('The token expires in ' + data.body['expires_in']);
+        console.log('The access token is ' + data.body['access_token']);
+        console.log('The refresh token is ' + data.body['refresh_token']);
+
+        // Set the access token on the API object to use it in later calls
+        spotifyApi.setAccessToken(data.body['access_token']);
         spotifyApi.setRefreshToken(data.body['refresh_token']);
-        console.log("this is data.body!", data.body)
-
-        // Save the amount of seconds until the access token expired
-        tokenExpirationEpoch = new Date().getTime() / 1000 + data.body['expires_in'];
-        console.log(
-            'Retrieved token. It expires in ' +
-            Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-            ' seconds!')
     },
-    (error) => {
-        console.log(error)
+    function (err) {
+        console.log('Something went wrong!', err);
+    }
+);
+// clientId, clientSecret and refreshToken has been set on the api object previous to this call.
+spotifyApi.refreshAccessToken().then(
+    function (data) {
+        console.log('The access token has been refreshed!');
+
+        // Save the access token so that it's used in future calls
+        spotifyApi.setAccessToken(data.body['access_token']);
+    },
+    function (err) {
+        console.log('Could not refresh access token', err);
     }
 );
 
+// Set all credentials at the same time
+spotifyApi.setCredentials({
+    accessToken: 'myAccessToken',
+    refreshToken: 'myRefreshToken',
+    redirectUri: 'http://www.example.com/test-callback',
+    clientId: 'myClientId',
+    clientSecret: 'myClientSecret'
+});
 
-// Continually print out the time left until the token expires..
-let numberOfTimesUpdated = 0;
+// Get all credentials
+console.log('The credentials are ' + spotifyApi.getCredentials());
 
-setInterval(function () {
-    console.log(
-        'Time left: ' +
-        Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-        ' seconds left!'
-    );
+// Reset all credentials at the same time
+spotifyApi.resetCredentials();
+app.use(cors())
+    .use(cookieParser());
 
-    // OK, we need to refresh the token. Stop printing and refresh.
-    if (++numberOfTimesUpdated > 2) {
-        clearInterval(this);
 
-        // Refresh token and print the new time to expiration.
-        spotifyApi.refreshAccessToken().then(
-            function (data) {
-                tokenExpirationEpoch =
-                    new Date().getTime() / 1000 + data.body['expires_in'];
-                console.log(
-                    'Refreshed token. It now expires in ' +
-                    Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-                    ' seconds!'
-                );
-            },
-            function (err) {
-                console.log("this is err", err)
-                console.log('Could not refresh the token!', err.message);
-            }
-        );
-    }
-}, 10000);
 
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');

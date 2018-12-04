@@ -50,6 +50,11 @@ function labelImages(name, path = "img") {
             });
     })
 }
+function getSpotifyTracks(tracks) {
+    console.log("TRACKS!!!!", tracks)
+    return spotifyApi.searchTracks(tracks, { limit: 10, offset: 20 })
+
+}
 
 router.post("/labelimage", upload.any(), async (req, res) => {
     const description = await labelImages(req.files[0]['filename'], "uploads")
@@ -67,12 +72,14 @@ router.post("/labelimage", upload.any(), async (req, res) => {
     res.send(stuff)
     //return new promise from label images function and resolve it with the label[0] and pass it to spotify call.
 })
-
+var authorizationCode =
+    'AQAgjS78s64u1axMCBCRA0cViW_ZDDU0pbgENJ_-WpZr3cEO7V5O-JELcEPU6pGLPp08SfO3dnHmu6XJikKqrU8LX9W6J11NyoaetrXtZFW-Y58UGeV69tuyybcNUS2u6eyup1EgzbTEx4LqrP_eCHsc9xHJ0JUzEhi7xcqzQG70roE4WKM_YrlDZO-e7GDRMqunS9RMoSwF_ov-gOMpvy9OMb7O58nZoc3LSEdEwoZPCLU4N4TTJ-IF6YsQRhQkEOJK';
 //instatiate New Spotify
 // credentials are optional
 let spotifyApi = new SpotifyWebApi({
     clientId: '8c5b0b3a7a2946c99a1f263a9fe7afbe',
     clientSecret: '4355750f8eff498bbb189804984be87f',
+    redirectUri: 'http://localhost:8888'
 })
 
 app.use(cors())
@@ -85,6 +92,7 @@ spotifyApi.clientCredentialsGrant().then(
         console.log(data)
         spotifyApi.setAccessToken(data.body['access_token'])
         spotifyApi.setRefreshToken(data.body['refresh_token']);
+        console.log("this is data.body!", data.body)
 
         // Save the amount of seconds until the access token expired
         tokenExpirationEpoch = new Date().getTime() / 1000 + data.body['expires_in'];
@@ -99,6 +107,39 @@ spotifyApi.clientCredentialsGrant().then(
 );
 
 
+// Continually print out the time left until the token expires..
+let numberOfTimesUpdated = 0;
+
+setInterval(function () {
+    console.log(
+        'Time left: ' +
+        Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+        ' seconds left!'
+    );
+
+    // OK, we need to refresh the token. Stop printing and refresh.
+    if (++numberOfTimesUpdated > 2) {
+        clearInterval(this);
+
+        // Refresh token and print the new time to expiration.
+        spotifyApi.refreshAccessToken().then(
+            function (data) {
+                tokenExpirationEpoch =
+                    new Date().getTime() / 1000 + data.body['expires_in'];
+                console.log(
+                    'Refreshed token. It now expires in ' +
+                    Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+                    ' seconds!'
+                );
+            },
+            function (err) {
+                console.log("this is err", err)
+                console.log('Could not refresh the token!', err.message);
+            }
+        );
+    }
+}, 10000);
+
 app.use((req, res, next) => {
     res.header('Access-Control-Allow-Origin', '*');
     res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
@@ -107,57 +148,6 @@ app.use((req, res, next) => {
 
 app.use(express.static(path.join(__dirname, './server/uploads')))
 
-
-router.route("/getalbum/:album")
-    .get((req, res) => {
-        // console.log(" get artist", req.params.artist)
-        spotifyApi.searchAlbums(req.params.album, { limit: 1, offset: 20 })
-            .then(
-                function (data) {
-                    // console.log('artist information');
-                    res.send(data.body)
-                },
-                function (err) {
-                    console.error(err);
-                }
-            );
-    });
-//  GET https://api.spotify.com/v1/artists/{id}
-router.route("/getartist/:artist")
-    .get((req, res) => {
-        // console.log(" get artist", req.params.artist)
-        spotifyApi.searchArtists(req.params.artist, { limit: 1, offset: 20 })
-            .then(
-                function (data) {
-                    // console.log('artist information');
-                    res.send(data.body)
-                },
-                function (err) {
-                    console.error(err);
-                }
-            );
-    });
-// GET https://api.spotify.com/v1/tracks/{id}
-router.route("/gettracks/:tracks")
-    .get((req, res) => {
-        getSpotifyTracks(req.params.tracks)
-            .then(
-                function (data) {
-                    console.log('track information');
-                    res.send(data.body)
-                },
-                function (err) {
-                    console.error(err);
-                }
-            );
-    });
-
-
-function getSpotifyTracks(tracks) {
-    console.log("TRACKS!!!!", tracks)
-    return spotifyApi.searchTracks(tracks, { limit: 10, offset: 20 })
-
-}
 
 app.use(router)
 console.log("running on 8888 my dude")

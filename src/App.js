@@ -1,18 +1,12 @@
 import React, { Component } from 'react';
 import './App.css';
-import NavBar from './components/NavBar/NavBar'
-import SearchBar from './components/SearchBar/SearchBar'
 
 class App extends Component {
   state = {
-    albums: [],
-    artists: [],
     loading: true,
-    query: '',
     tracks: '',
     trackName: '',
     player: '',
-    description: '',
     image: '',
     newImage: '',
     name: '',
@@ -56,44 +50,6 @@ class App extends Component {
   handleChange = (e) => {
     this.setState({
       query: e.target.value
-    })
-  }
-  handleSubmit = (e) => {
-    e.preventDefault();
-    this.getArtist()
-    this.getTrack()
-  }
-  getArtist = () => {
-    fetch(`/getartist/${this.state.query}`).then(
-      res => res.json()
-    ).then(body => this.setState({
-      artists: body.artists.items
-    }))
-  }
-  getTrack = () => {
-    fetch(`/gettracks/${this.state.query}`).then(
-      res => res.json()
-    ).then(body => this.setState({
-      tracks: body.tracks.items[Math.floor(Math.random() * 10)].external_urls
-    }))
-  }
-  getImage = () => {
-    fetch(`/getartist/${this.state.query}`).then(
-      res => res.json()
-    ).then(body => this.setState({
-      image: body.artists.items[0].images[0].url
-    }))
-  }
-  getAlbum = () => {
-    fetch(`/getalbum/${this.state.albumId}`).then(
-      res => res.json()
-    ).then(body => this.setState({
-      albums: body.items
-    }))
-  }
-  getPlayer = () => {
-    this.setState({
-      player: this.state.artists[0].uri.split(":").pop()
     })
   }
   authorize = (e) => {

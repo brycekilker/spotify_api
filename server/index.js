@@ -97,7 +97,7 @@ router.post("/labelimage", upload.any(), async (req, res) => {
 
 var client_id = '8c5b0b3a7a2946c99a1f263a9fe7afbe'; // Your client id
 var client_secret = '4355750f8eff498bbb189804984be87f'; // Your secret
-var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
+var redirect_uri = 'https://salty-citadel-82640.herokuapp.com/'; // Your redirect uri
 
 const credentials = {
     clientId: client_id,

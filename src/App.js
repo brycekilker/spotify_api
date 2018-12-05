@@ -60,6 +60,8 @@ class App extends Component {
       mode: "no-cors"
     }).then(data => {
       console.log('hi there')
+    }).catch(err => {
+      console.log("error", err)
     })
   }
 

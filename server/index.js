@@ -94,125 +94,146 @@ router.post("/labelimage", upload.any(), async (req, res) => {
  * https://developer.spotify.com/web-api/authorization-guide/#authorization_code_flow
  */
 
+var spotifyApi = new SpotifyWebApi({
+    clientId: '8c5b0b3a7a2946c99a1f263a9fe7afbe',
+    clientSecret: '4355750f8eff498bbb189804984be87f'
+});
 
-var client_id = '8c5b0b3a7a2946c99a1f263a9fe7afbe'; // Your client id
-var client_secret = '4355750f8eff498bbb189804984be87f'; // Your secret
-var redirect_uri = 'https://salty-citadel-82640.herokuapp.com/'; // Your redirect uri
+// Retrieve an access token
+spotifyApi.clientCredentialsGrant().then(
+    function (data) {
+        console.log('The access token expires in ' + data.body['expires_in']);
+        console.log('The access token is ' + data.body['access_token']);
 
-const credentials = {
-    clientId: client_id,
-    clientSecret: client_secret,
-    redirectUri: redirect_uri
-}
-/**
- * Generates a random string containing numbers and letters
- * @param  {number} length The length of the string
- * @return {string} The generated string
- */
-var generateRandomString = function (length) {
-    var text = '';
-    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-
-    for (var i = 0; i < length; i++) {
-        text += possible.charAt(Math.floor(Math.random() * possible.length));
+        // Save the access token so that it's used in future calls
+        spotifyApi.setAccessToken(data.body['access_token']);
+    },
+    function (err) {
+        console.log(
+            'Something went wrong when retrieving an access token',
+            err.message
+        );
     }
-    return text;
-};
+);
 
-var stateKey = 'spotify_auth_state';
+// var client_id = '8c5b0b3a7a2946c99a1f263a9fe7afbe'; // Your client id
+// var client_secret = '4355750f8eff498bbb189804984be87f'; // Your secret
+// var redirect_uri = 'https://salty-citadel-82640.herokuapp.com/'; // Your redirect uri
 
-const spotifyApi = new SpotifyWebApi(credentials)
+// const credentials = {
+//     clientId: client_id,
+//     clientSecret: client_secret,
+//     redirectUri: redirect_uri
+// }
+// /**
+//  * Generates a random string containing numbers and letters
+//  * @param  {number} length The length of the string
+//  * @return {string} The generated string
+//  */
+// var generateRandomString = function (length) {
+//     var text = '';
+//     var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
 
-app.use(express.static(__dirname + '/public'))
-    .use(cors())
-    .use(cookieParser());
+//     for (var i = 0; i < length; i++) {
+//         text += possible.charAt(Math.floor(Math.random() * possible.length));
+//     }
+//     return text;
+// };
 
-app.get('/login', function (req, res) {
+// var stateKey = 'spotify_auth_state';
 
-    var state = generateRandomString(16);
-    res.cookie(stateKey, state);
+// const spotifyApi = new SpotifyWebApi(credentials)
 
-    // your application requests authorization
-    var scope = 'user-read-private user-read-email user-read-playback-state';
-    res.redirect('https://accounts.spotify.com/authorize?' +
-        querystring.stringify({
-            response_type: 'code',
-            client_id: client_id,
-            scope: scope,
-            redirect_uri: redirect_uri,
-            state: state
-        }));
-});
+// app.use(express.static(__dirname + '/public'))
+//     .use(cors())
+//     .use(cookieParser());
 
-app.get('/callback', function (req, res) {
-    // your application requests refresh and access tokens
-    // after checking the state parameter
+// app.get('/login', function (req, res) {
 
-    var code = req.query.code || null;
-    var state = req.query.state || null;
-    var storedState = req.cookies ? req.cookies[stateKey] : null;
-    console.log("this is the 1st!", req.query)
-    spotifyApi.authorizationCodeGrant(code).then(
-        function (data) {
-            console.log('The token expires in ' + data.body['expires_in']);
-            console.log('The access token is ' + data.body['access_token']);
-            console.log('The refresh token is ' + data.body['refresh_token']);
+//     var state = generateRandomString(16);
+//     res.cookie(stateKey, state);
 
-            // Set the access token on the API object to use it in later calls
-            spotifyApi.setAccessToken(data.body['access_token']);
-            spotifyApi.setRefreshToken(data.body['refresh_token']);
+//     // your application requests authorization
+//     var scope = 'user-read-private user-read-email user-read-playback-state';
+//     res.redirect('https://accounts.spotify.com/authorize?' +
+//         querystring.stringify({
+//             response_type: 'code',
+//             client_id: client_id,
+//             scope: scope,
+//             redirect_uri: redirect_uri,
+//             state: state
+//         }));
+// });
 
-            tokenExpirationEpoch =
-                new Date().getTime() / 1000 + data.body['expires_in'];
-            console.log(
-                'Retrieved token. It expires in ' +
-                Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-                ' seconds!'
-            );
-            if (tokenExpirationEpoch) {
-                setInterval(function () {
-                    console.log(
-                        'Time left: ' +
-                        Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-                        ' seconds left!'
-                    );
+// app.get('/callback', function (req, res) {
+//     // your application requests refresh and access tokens
+//     // after checking the state parameter
 
-                    // OK, we need to refresh the token. Stop printing and refresh.
-                    if (++numberOfTimesUpdated > 5) {
-                        clearInterval(this);
+//     var code = req.query.code || null;
+//     var state = req.query.state || null;
+//     var storedState = req.cookies ? req.cookies[stateKey] : null;
+//     console.log("this is the 1st!", req.query)
+//     spotifyApi.authorizationCodeGrant(code).then(
+//         function (data) {
+//             console.log('The token expires in ' + data.body['expires_in']);
+//             console.log('The access token is ' + data.body['access_token']);
+//             console.log('The refresh token is ' + data.body['refresh_token']);
 
-                        // Refresh token and print the new time to expiration.
-                        spotifyApi.refreshAccessToken().then(
-                            function (data) {
-                                tokenExpirationEpoch =
-                                    new Date().getTime() / 1000 + data.body['expires_in'];
-                                console.log(
-                                    'Refreshed token. It now expires in ' +
-                                    Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
-                                    ' seconds!'
-                                );
-                            },
-                            function (err) {
-                                console.log('Could not refresh the token!', err.message);
-                            }
-                        );
-                    }
-                }, 600000);
+//             // Set the access token on the API object to use it in later calls
+//             spotifyApi.setAccessToken(data.body['access_token']);
+//             spotifyApi.setRefreshToken(data.body['refresh_token']);
 
-            }
+//             tokenExpirationEpoch =
+//                 new Date().getTime() / 1000 + data.body['expires_in'];
+//             console.log(
+//                 'Retrieved token. It expires in ' +
+//                 Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+//                 ' seconds!'
+//             );
+//             if (tokenExpirationEpoch) {
+//                 setInterval(function () {
+//                     console.log(
+//                         'Time left: ' +
+//                         Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+//                         ' seconds left!'
+//                     );
 
-        },
-        function (err) {
-            console.log(
-                'Something went wrong when retrieving the access token!',
-                err.message
-            );
-        }
-    );
-});
+//                     // OK, we need to refresh the token. Stop printing and refresh.
+//                     if (++numberOfTimesUpdated > 5) {
+//                         clearInterval(this);
+
+//                         // Refresh token and print the new time to expiration.
+//                         spotifyApi.refreshAccessToken().then(
+//                             function (data) {
+//                                 tokenExpirationEpoch =
+//                                     new Date().getTime() / 1000 + data.body['expires_in'];
+//                                 console.log(
+//                                     'Refreshed token. It now expires in ' +
+//                                     Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+//                                     ' seconds!'
+//                                 );
+//                             },
+//                             function (err) {
+//                                 console.log('Could not refresh the token!', err.message);
+//                             }
+//                         );
+//                     }
+//                 }, 600000);
+
+//             }
+
+//         },
+//         function (err) {
+//             console.log(
+//                 'Something went wrong when retrieving the access token!',
+//                 err.message
+//             );
+//         }
+//     );
+// });
 
 
-var numberOfTimesUpdated = 0;
+// var numberOfTimesUpdated = 0;
 
 app.use(router)
 console.log('Listening on 8888');

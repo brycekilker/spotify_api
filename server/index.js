@@ -36,6 +36,7 @@ const upload = multer({ storage })
 
 // Performs label detection on the image file
 function labelImages(name, path = "img") {
+    console.log('can i see anything?')
     return new Promise((resolve, reject) => {
         client
             .labelDetection(`./server/${path}/${name}`)
@@ -74,8 +75,6 @@ router.post("/labelimage", upload.any(), async (req, res) => {
 
     function tokenExpirationSet(token) {
     }
-
-    //return new promise from label images function and resolve it with the label[0] and pass it to spotify call.
 })
 
 /**
@@ -207,8 +206,6 @@ app.get('/callback', function (req, res) {
 
 var numberOfTimesUpdated = 0;
 
-
-
-
+app.use(router)
 console.log('Listening on 8888');
 app.listen(8888);

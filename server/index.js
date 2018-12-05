@@ -18,6 +18,10 @@ app.use(bodyParser.json())
 // app.use(multer().array())
 const router = express.Router()
 
+if (process.env.NODE_ENV !== 'dev') {
+    app.use(express.static('build'))
+}
+
 // Your Google Cloud Platform project ID
 const client = new vision.ImageAnnotatorClient();
 var tokenExpirationEpoch = 0

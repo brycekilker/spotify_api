@@ -18,6 +18,10 @@ app.use(bodyParser.json())
 // app.use(multer().array())
 const router = express.Router()
 
+router.get('/', (req, res) => {
+    res.json({})
+})
+
 if (process.env.NODE_ENV !== 'dev') {
     app.use(express.static('build'))
 }

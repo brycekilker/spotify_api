@@ -53,17 +53,17 @@ class App extends Component {
     })
   }
 
-  componentDidMount() {
-    console.log("can we see the componentDidMount")
-    fetch("https://salty-citadel-82640.herokuapp.com/login", {
-      method: "GET",
-      mode: "no-cors"
-    }).then(data => {
-      console.log('hi there')
-    }).catch(err => {
-      console.log("error", err)
-    })
-  }
+  // componentDidMount() {
+  //   console.log("can we see the componentDidMount")
+  //   fetch("https://salty-citadel-82640.herokuapp.com/login", {
+  //     method: "GET",
+  //     mode: "no-cors"
+  //   }).then(data => {
+  //     console.log('hi there')
+  //   }).catch(err => {
+  //     console.log("error", err)
+  //   })
+  // }
 
   render() {
     console.log(this.state)
@@ -71,7 +71,7 @@ class App extends Component {
       <div className="App" >
         <header>
           <span><u>S</u>poti<u>V</u>ision</span>
-          <p id="headerText">Upload a photo to search songs based on it's content using the Spotify and Google Cloud Vision API</p>
+          <p id="headerText">Upload a photo to search songs based on its content using the Spotify and Google Cloud Vision API</p>
         </header>
         <div className="searchContent">
           <h1 >Upload your image!</h1>

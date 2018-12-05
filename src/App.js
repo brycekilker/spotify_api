@@ -54,7 +54,7 @@ class App extends Component {
   }
 
   componentDidMount() {
-    fetch("http://localhost:8888/login", {
+    fetch("/login", {
       method: "GET",
       mode: "no-cors"
     }).then(data => {

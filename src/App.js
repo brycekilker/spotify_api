@@ -54,6 +54,7 @@ class App extends Component {
   }
 
   componentDidMount() {
+    console.log("can we see the componentDidMount")
     fetch("https://salty-citadel-82640.herokuapp.com/login", {
       method: "GET",
       mode: "no-cors"

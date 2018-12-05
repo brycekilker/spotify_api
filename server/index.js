@@ -1,17 +1,17 @@
 require('dotenv').config()
 const SpotifyWebApi = require('spotify-web-api-node');
 const express = require('express')
+const path = require('path')
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser')
 const cors = require('cors');
-const multer = require('multer')({ dest: "server/uploads" })
+const multer = require('multer')
 const vision = require('@google-cloud/vision')
 const { Storage } = require('@google-cloud/storage');
 const querystring = require('querystring');
 const randomString = require('./helpers/randomString')
 const request = require('request'); // "Request" library
 const STATE_KEY = require('./helpers/constants').STATE_KEY
-console.log(STATE_KEY)
 const app = express()
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(bodyParser.json())
@@ -20,62 +20,29 @@ const router = express.Router()
 
 // Your Google Cloud Platform project ID
 const client = new vision.ImageAnnotatorClient();
-// Creates a client
-const storage = new Storage()
+var tokenExpirationEpoch = 0
 
-// Makes an authenticated API request.
-storage
-    .getBuckets()
-    .then((results) => {
-        const buckets = results[0];
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        cb(null, 'server/uploads')
+    },
+    filename: function (req, file, cb) {
+        cb(null, file.originalname.split('.')[0] + '.' + file.mimetype.split('/')[1])
+    }
+})
 
-        console.log('Buckets:');
-        buckets.forEach((bucket) => {
-            getBucketFiles(bucket.name)
-        });
-    })
-    .catch((err) => {
-        console.error('ERROR:', err);
-    });
+const upload = multer({ storage })
 
-function downloadFile(file) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            console.log("download file")
-            const options = {
-                destination: `./server/img/${file.name}`
-            }
-            await file.download(options)
-            resolve()
-            console.log("this is linke 42")
-        } catch (err) {
-            console.log("error", err)
-            reject()
-        }
-    })
-}
-async function getBucketFiles(name) {
-    const [files] = await storage.bucket(name).getFiles()
-    await new Promise((resolve, reject) => {
-        files.forEach(async (file, index) => {
-            await downloadFile(file)
-            if (index === files.length - 1) {
-                resolve()
-            }
-        })
-    })
-    files.forEach(file => {
-        labelImages(file.name)
-    })
-}
 
 // Performs label detection on the image file
 function labelImages(name, path = "img") {
+    console.log('can i see anything?')
     return new Promise((resolve, reject) => {
-        console.log("this is the label images", name)
         client
             .labelDetection(`./server/${path}/${name}`)
             .then(results => {
+                console.log("these are broad labels", results[0].labelAnnotations)
+                console.log("this is labels", results[0].labelAnnotations[1].description)
                 const labels = results[0].labelAnnotations;
                 resolve(labels[0].description)
             })
@@ -85,202 +52,160 @@ function labelImages(name, path = "img") {
             });
     })
 }
+function getSpotifyTracks(tracks) {
+    console.log("TRACKS!!!!", tracks)
+    return spotifyApi.searchTracks(tracks, { limit: 10, offset: 20 })
 
-router.post("/labelimage", multer.any(), async (req, res) => {
-    console.log("this is reqbody", req.files)
+}
+
+router.post("/labelimage", upload.any(), async (req, res) => {
     const description = await labelImages(req.files[0]['filename'], "uploads")
-    console.log("this is Description", description)
-    getSpotifyTracks(description)
+    const stuff = await getSpotifyTracks(description)
         .then(
             function (data) {
-                console.log('track information');
-                res.send(data.body)
+                return data.body
             },
             function (err) {
                 console.error(err);
             }
         );
-    //return new promise from label images function and resolve it with the label[0] and pass it to spotify call.
-})
+    stuff.description = description
+    console.log("this is stuff", stuff)
+    res.send(stuff)
 
-
-
-
-
-
-
-
-
-//instatiate New Spotify
-// credentials are optional
-let spotifyApi = new SpotifyWebApi({
-    clientId: '8c5b0b3a7a2946c99a1f263a9fe7afbe',
-    clientSecret: '4355750f8eff498bbb189804984be87f',
-})
-
-let client_id = '8c5b0b3a7a2946c99a1f263a9fe7afbe'
-let client_secret = '4355750f8eff498bbb189804984be87f'
-let redirect_uri = 'http://localhost:8888/callback'
-//access token
-
-app.use(cors())
-    .use(cookieParser());
-spotifyApi.clientCredentialsGrant().then(
-    (data) => {
-        spotifyApi.setAccessToken(data.body['access_token'])
-    },
-    (error) => {
-        console.log(error)
+    function tokenExpirationSet(token) {
     }
-)
-app.use((req, res, next) => {
-    res.header('Access-Control-Allow-Origin', '*');
-    res.header('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept');
-    next();
-});
-//setting a range of information to get
-// router.route("/getalbum/:albumid")
-//     .get((req, res) => {
-//         console.log("get album")
-//         spotifyApi.getArtistAlbums(req.params.albumid, { limit: 1, offset: 20 })
-//             .then(
-//                 function (data) {
-//                     console.log('Album information');
-//                     res.send(data.body)
-//                 },
-//                 function (err) {
-//                     console.error(err);
-//                 }
-//             );
-//     });
-router.route("/getalbum/:album")
-    .get((req, res) => {
-        // console.log(" get artist", req.params.artist)
-        spotifyApi.searchAlbums(req.params.album, { limit: 1, offset: 20 })
-            .then(
-                function (data) {
-                    // console.log('artist information');
-                    res.send(data.body)
-                },
-                function (err) {
-                    console.error(err);
-                }
-            );
-    });
-//  GET https://api.spotify.com/v1/artists/{id}
-router.route("/getartist/:artist")
-    .get((req, res) => {
-        // console.log(" get artist", req.params.artist)
-        spotifyApi.searchArtists(req.params.artist, { limit: 1, offset: 20 })
-            .then(
-                function (data) {
-                    // console.log('artist information');
-                    res.send(data.body)
-                },
-                function (err) {
-                    console.error(err);
-                }
-            );
-    });
-// GET https://api.spotify.com/v1/tracks/{id}
-router.route("/gettracks/:tracks")
-    .get((req, res) => {
-        console.log("get track", req.params.tracks)
-        getSpotifyTracks(req.params.tracks)
-            .then(
-                function (data) {
-                    console.log('track information');
-                    res.send(data.body)
-                },
-                function (err) {
-                    console.error(err);
-                }
-            );
-    });
+})
+
+/**
+ * This is an example of a basic node.js script that performs
+ * the Authorization Code oAuth2 flow to authenticate against
+ * the Spotify Accounts.
+ *
+ * For more information, read
+ * https://developer.spotify.com/web-api/authorization-guide/#authorization_code_flow
+ */
 
 
-function getSpotifyTracks(tracks) {
-    return spotifyApi.searchTracks(tracks, { limit: 10, offset: 20 })
+var client_id = '8c5b0b3a7a2946c99a1f263a9fe7afbe'; // Your client id
+var client_secret = '4355750f8eff498bbb189804984be87f'; // Your secret
+var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
 
+const credentials = {
+    clientId: client_id,
+    clientSecret: client_secret,
+    redirectUri: redirect_uri
 }
+/**
+ * Generates a random string containing numbers and letters
+ * @param  {number} length The length of the string
+ * @return {string} The generated string
+ */
+var generateRandomString = function (length) {
+    var text = '';
+    var possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+
+    for (var i = 0; i < length; i++) {
+        text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
+};
+
+var stateKey = 'spotify_auth_state';
+
+const spotifyApi = new SpotifyWebApi(credentials)
+
+app.use(express.static(__dirname + '/public'))
+    .use(cors())
+    .use(cookieParser());
+
+app.get('/login', function (req, res) {
+
+    var state = generateRandomString(16);
+    res.cookie(stateKey, state);
+
+    // your application requests authorization
+    var scope = 'user-read-private user-read-email user-read-playback-state';
+    res.redirect('https://accounts.spotify.com/authorize?' +
+        querystring.stringify({
+            response_type: 'code',
+            client_id: client_id,
+            scope: scope,
+            redirect_uri: redirect_uri,
+            state: state
+        }));
+});
+
+app.get('/callback', function (req, res) {
+    // your application requests refresh and access tokens
+    // after checking the state parameter
+
+    var code = req.query.code || null;
+    var state = req.query.state || null;
+    var storedState = req.cookies ? req.cookies[stateKey] : null;
+    console.log("this is the 1st!", req.query)
+    spotifyApi.authorizationCodeGrant(code).then(
+        function (data) {
+            console.log('The token expires in ' + data.body['expires_in']);
+            console.log('The access token is ' + data.body['access_token']);
+            console.log('The refresh token is ' + data.body['refresh_token']);
+
+            // Set the access token on the API object to use it in later calls
+            spotifyApi.setAccessToken(data.body['access_token']);
+            spotifyApi.setRefreshToken(data.body['refresh_token']);
+
+            tokenExpirationEpoch =
+                new Date().getTime() / 1000 + data.body['expires_in'];
+            console.log(
+                'Retrieved token. It expires in ' +
+                Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+                ' seconds!'
+            );
+            if (tokenExpirationEpoch) {
+                setInterval(function () {
+                    console.log(
+                        'Time left: ' +
+                        Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+                        ' seconds left!'
+                    );
+
+                    // OK, we need to refresh the token. Stop printing and refresh.
+                    if (++numberOfTimesUpdated > 5) {
+                        clearInterval(this);
+
+                        // Refresh token and print the new time to expiration.
+                        spotifyApi.refreshAccessToken().then(
+                            function (data) {
+                                tokenExpirationEpoch =
+                                    new Date().getTime() / 1000 + data.body['expires_in'];
+                                console.log(
+                                    'Refreshed token. It now expires in ' +
+                                    Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+                                    ' seconds!'
+                                );
+                            },
+                            function (err) {
+                                console.log('Could not refresh the token!', err.message);
+                            }
+                        );
+                    }
+                }, 600000);
+
+            }
+
+        },
+        function (err) {
+            console.log(
+                'Something went wrong when retrieving the access token!',
+                err.message
+            );
+        }
+    );
+});
 
 
-
-// // router.route('/login')
-// //     .get((req, res) => {
-// //         var state = randomString(16);
-// //         res.cookie(STATE_KEY, state);
-
-// //         var scopes = ['user-read-private', 'user-read-email'];
-// //         let authorizeURL = spotifyApi.createAuthorizeURL(scopes, state)
-// //         console.log(authorizeURL)
-// //         res.redirect(authorizeURL);
-// //     });
-
-// // router.route('/callback')
-// //     .get((req, res) => {
-// //         console.log('callback!')
-// //         // your application requests refresh and access tokens
-// //         // after checking the state parameter
-
-// //         var code = req.query.code || null;
-// //         var state = req.query.state || null;
-// //         var storedState = req.cookies ? req.cookies[STATE_KEY] : null;
-
-// //         if (state === null || state !== storedState) {
-// //             res.redirect('/#' +
-// //                 querystring.stringify({
-// //                     error: 'state_mismatch'
-// //                 }));
-// //         } else {
-// //             res.clearCookie(STATE_KEY);
-// //             var authOptions = {
-// //                 url: 'https://accounts.spotify.com/api/token',
-// //                 form: {
-// //                     code: code,
-// //                     redirect_uri: redirect_uri,
-// //                     grant_type: 'authorization_code'
-// //                 },
-// //                 headers: {
-// //                     'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))
-// //                 },
-// //                 json: true
-// //             };
-
-// //             request.post(authOptions, function (error, response, body) {
-// //                 if (!error && response.statusCode === 200) {
-
-// //                     var access_token = body.access_token,
-// //                         refresh_token = body.refresh_token;
-// //                     spotifyApi.setAccessToken(access_token)
-// //                     console.log(access_token)
-// //                     var options = {
-// //                         url: 'https://api.spotify.com/v1/me',
-// //                         headers: { 'Authorization': 'Bearer ' + access_token },
-// //                         json: true
-// //                     };
-
-// //                     // use the access token to access the Spotify Web API
-// //                     request.get(options, function (error, response, body) {
-// //                         console.log("this is line 108", body);
-// //                     });
-
-// //                     // we can also pass the token to the browser to make requests from there
-// //                     res.redirect('/#' +
-// //                         querystring.stringify({
-// //                             access_token: access_token,
-// //                             refresh_token: refresh_token
-// //                         }));
-// //                 } else {
-// //                     res.redirect('/#' +
-// //                         querystring.stringify({
-// //                             error: 'invalid_token'
-// //                         }));
-// //                 }
-// //             });
-// //         }
-// //     })
+var numberOfTimesUpdated = 0;
 
 app.use(router)
-console.log("running on 8888 my dude")
-app.listen(8888)
+console.log('Listening on 8888');
+app.listen(8888);

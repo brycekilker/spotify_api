@@ -52,11 +52,16 @@ class App extends Component {
       query: e.target.value
     })
   }
-  authorize = (e) => {
-    e.preventDefault();
-    console.log('its working')
-    fetch('/login')
+
+  componentDidMount() {
+    fetch("http://localhost:8888/login", {
+      method: "GET",
+      mode: "no-cors"
+    }).then(data => {
+      console.log('hi there')
+    })
   }
+
   render() {
     console.log(this.state)
     return (
@@ -72,7 +77,6 @@ class App extends Component {
             <button>Upload</button>
           </form>
         </div>
-
         <div className="search">
         </div>
         <div id="images">

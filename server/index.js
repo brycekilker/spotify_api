@@ -20,6 +20,7 @@ const router = express.Router()
 
 // Your Google Cloud Platform project ID
 const client = new vision.ImageAnnotatorClient();
+var tokenExpirationEpoch = 0
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -70,6 +71,10 @@ router.post("/labelimage", upload.any(), async (req, res) => {
     stuff.description = description
     console.log("this is stuff", stuff)
     res.send(stuff)
+
+    function tokenExpirationSet(token) {
+    }
+
     //return new promise from label images function and resolve it with the label[0] and pass it to spotify call.
 })
 
@@ -82,10 +87,16 @@ router.post("/labelimage", upload.any(), async (req, res) => {
  * https://developer.spotify.com/web-api/authorization-guide/#authorization_code_flow
  */
 
+
 var client_id = '8c5b0b3a7a2946c99a1f263a9fe7afbe'; // Your client id
 var client_secret = '4355750f8eff498bbb189804984be87f'; // Your secret
 var redirect_uri = 'http://localhost:8888/callback'; // Your redirect uri
 
+const credentials = {
+    clientId: client_id,
+    clientSecret: client_secret,
+    redirectUri: redirect_uri
+}
 /**
  * Generates a random string containing numbers and letters
  * @param  {number} length The length of the string
@@ -103,6 +114,7 @@ var generateRandomString = function (length) {
 
 var stateKey = 'spotify_auth_state';
 
+const spotifyApi = new SpotifyWebApi(credentials)
 
 app.use(express.static(__dirname + '/public'))
     .use(cors())
@@ -133,82 +145,70 @@ app.get('/callback', function (req, res) {
     var state = req.query.state || null;
     var storedState = req.cookies ? req.cookies[stateKey] : null;
     console.log("this is the 1st!", req.query)
-    if (state === null || state !== storedState) {
-        res.redirect('/#' +
-            querystring.stringify({
-                error: 'state_mismatch'
-            }));
-    } else {
-        res.clearCookie(stateKey);
-        var authOptions = {
-            url: 'https://accounts.spotify.com/api/token',
-            form: {
-                code: code,
-                redirect_uri: redirect_uri,
-                grant_type: 'authorization_code'
-            },
-            headers: {
-                'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64'))
-            },
-            json: true
-        };
-        console.log("this is the 2nd!", req.query)
-        request.post(authOptions, function (error, response, body) {
-            if (!error && response.statusCode === 200) {
+    spotifyApi.authorizationCodeGrant(code).then(
+        function (data) {
+            console.log('The token expires in ' + data.body['expires_in']);
+            console.log('The access token is ' + data.body['access_token']);
+            console.log('The refresh token is ' + data.body['refresh_token']);
 
-                var access_token = body.access_token,
-                    refresh_token = body.refresh_token;
+            // Set the access token on the API object to use it in later calls
+            spotifyApi.setAccessToken(data.body['access_token']);
+            spotifyApi.setRefreshToken(data.body['refresh_token']);
 
-                var options = {
-                    url: 'https://api.spotify.com/v1/me',
-                    headers: { 'Authorization': 'Bearer ' + access_token },
-                    json: true
-                };
+            tokenExpirationEpoch =
+                new Date().getTime() / 1000 + data.body['expires_in'];
+            console.log(
+                'Retrieved token. It expires in ' +
+                Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+                ' seconds!'
+            );
+            if (tokenExpirationEpoch) {
+                setInterval(function () {
+                    console.log(
+                        'Time left: ' +
+                        Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+                        ' seconds left!'
+                    );
 
-                // use the access token to access the Spotify Web API
-                request.get(options, function (error, response, body) {
-                    console.log(body);
-                });
+                    // OK, we need to refresh the token. Stop printing and refresh.
+                    if (++numberOfTimesUpdated > 5) {
+                        clearInterval(this);
 
-                // we can also pass the token to the browser to make requests from there
-                res.redirect('http://localhost:3000/#' +
-                    querystring.stringify({
-                        access_token: access_token,
-                        refresh_token: refresh_token
-                    }));
-            } else {
-                res.redirect('/#' +
-                    querystring.stringify({
-                        error: 'invalid_token'
-                    }));
+                        // Refresh token and print the new time to expiration.
+                        spotifyApi.refreshAccessToken().then(
+                            function (data) {
+                                tokenExpirationEpoch =
+                                    new Date().getTime() / 1000 + data.body['expires_in'];
+                                console.log(
+                                    'Refreshed token. It now expires in ' +
+                                    Math.floor(tokenExpirationEpoch - new Date().getTime() / 1000) +
+                                    ' seconds!'
+                                );
+                            },
+                            function (err) {
+                                console.log('Could not refresh the token!', err.message);
+                            }
+                        );
+                    }
+                }, 600000);
+
             }
-        });
-    }
-});
 
-app.get('/refresh_token', function (req, res) {
-    console.log("this is the 3rd!", req.query)
-    // requesting access token from refresh token
-    var refresh_token = req.query.refresh_token;
-    var authOptions = {
-        url: 'https://accounts.spotify.com/api/token',
-        headers: { 'Authorization': 'Basic ' + (new Buffer(client_id + ':' + client_secret).toString('base64')) },
-        form: {
-            grant_type: 'refresh_token',
-            refresh_token: refresh_token
         },
-        json: true
-    };
-
-    request.post(authOptions, function (error, response, body) {
-        if (!error && response.statusCode === 200) {
-            var access_token = body.access_token;
-            res.send({
-                'access_token': access_token
-            });
+        function (err) {
+            console.log(
+                'Something went wrong when retrieving the access token!',
+                err.message
+            );
         }
-    });
+    );
 });
+
+
+var numberOfTimesUpdated = 0;
+
+
+
 
 console.log('Listening on 8888');
 app.listen(8888);

@@ -54,7 +54,7 @@ class App extends Component {
   }
 
   componentDidMount() {
-    fetch("/login", {
+    fetch("https://salty-citadel-82640.herokuapp.com/login", {
       method: "GET",
       mode: "no-cors"
     }).then(data => {

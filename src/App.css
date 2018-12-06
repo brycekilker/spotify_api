@@ -1,14 +1,13 @@
 body {
   background-image: url(/img/back1.jpg);
   /* background-image: radial-gradient(blue, green); */
-  background-repeat: no-repeat;
+  /* background-repeat: no-repeat; */
   background-size: cover;
   /* align-content: center; */
   max-width: 100vw;
-  max-height: 100vh;
+  height: auto;
   size: 100%;
   vertical-align: baseline;
-  background-position-y: 6em;
 }
 
 .App {
